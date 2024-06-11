@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <title>Requests and Bookings</title>
+</head>
+<body>
+    <div class="container-fluid bg-body-secondary">
+        <nav class="navbar mb-3 py-0">
+            <div class="container px-3 col-lg-8">
+                <a class="navbar-brand" href="/user/{{session['current_login']}}">Welcome {{session.get('first_name')}}!</a>
+                <nav class="nav nav-underline justify-content-end align-items-center" id="navbarNavAltMarkup">
+                    <a class="nav-link active" aria-current="page" href="#">All Requests</a>
+                    <a href="/add_request" class="nav-link">Create New</a>
+                    <a href="/user/logout" class="btn btn-outline-warning ">Logout</a>
+                </nav>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container px-3 col-lg-8 ">
+        <div class="card text-center mb-3">
+            <span class="card-header h2">All Rides</span>
+            
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="text-center mb-3">
+                    <span class="card-header h2">Rideshare Requests</span>
+                </div>
+
+                {% for request in all_requests.values() %}
+                    {% if request.id not in all_bookings %}
+                        <div class="card mb-3 {{'bg-info-subtle' if request.passenger.id == session['current_login'] else ''}}">
+                            <div class="card-body">
+                                <div class="row">
+                                    <span class="col-5">Rider:</span>
+                                    <span class="col-7">
+                                        {% if request.passenger.id == session['current_login'] %}
+                                            <strong>You</strong>
+                                        {% else %}
+                                            <strong>{{request.passenger.first_name}}</strong>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="row">
+                                    <span class="col-5">Destination:</span>
+                                    <span class="col-7">{{request.destination}}</span>
+                                </div>
+                                <div class="row">
+                                    <span class="col-5">Date:</span>
+                                    <span class="col-7">{{request.date.strftime('%B %d')}}</span>
+                                </div>
+                                {% if request.passenger.id == session['current_login'] %}
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="/request/{{request.id}}">Details</a>
+                                        | <a href="{{url_for('edit_request_from_link', request_id = request.id)}}" class="">Edit</a>
+                                        | <a href="/request/{{request.id}}/delete" class="text-danger">Delete Request</a>
+                                    </div>
+                                {% endif %}
+
+                                {% if request.passenger.id != session['current_login'] %}
+                                    <form class="mt-2 d-flex justify-content-end" action="{{ url_for('add_booking') }}" method="post">
+                                        <input type="hidden" name="user_id" id="user_id" value="{{session['current_login']}}">
+                                        <input type="hidden" name="request_id" id="request_id" value="{{request.id}}">
+                                        <button class="btn btn-outline-primary py-1 px-2" type="submit">I can drive!</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="col">
+                <div class="text-center mb-3">
+                    <span class="card-header h2">Booked Rideshares</span>
+                </div>
+
+                {% for booking in all_bookings.values() %}
+                    <div class="card mb-3 {{'bg-info-subtle' if booking.driver.id == session['current_login'] or booking.passenger.id == session['current_login'] else ''}}">
+                        <div class="card-body">
+                            <div>
+                                {% if booking.driver.id == session['current_login'] %}
+                                    <strong>You</strong> are
+                                {% else %}
+                                    <strong>{{booking.driver.first_name}}</strong> is
+                                {% endif %}
+                                driving 
+                                {% if booking.passenger.id == session['current_login'] %}
+                                    <strong>You</strong>
+                                {% else %}
+                                    <strong>{{booking.passenger.first_name}}</strong>
+                                {% endif %}
+                                    to <em>{{booking.request.destination}}</em> 
+                                    on <em>{{booking.request.date.strftime('%B %d')}}</em>.
+                            </div>
+
+                            {% if booking.passenger.id == session['current_login'] %}
+                                <div class="d-flex gap-3 mt-2">
+                                    <a href="/request/{{booking.request.id}}">Details</a>
+                                    | <a href="/request/{{booking.request.id}}/delete" class="text-danger">Delete Request</a>
+                                </div>
+                            {% endif %}
+                            {% if booking.driver.id == session['current_login'] %}
+                                <div class="d-flex gap-3 mt-2">
+                                    <a href="/request/{{booking.request.id}}">Details</a>
+                                    | <a href="/booking/{{booking.id}}/delete" class="text-warning">Cancel Ride</a>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>
